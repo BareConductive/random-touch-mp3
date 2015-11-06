@@ -61,6 +61,10 @@ void setup(){
   //while (!Serial) ; {} //uncomment when using the serial monitor 
   Serial.println("Bare Conductive Random Touch MP3 player");
 
+  // initialise the Arduino pseudo-random number generator with 
+  // a bit of noise for extra randomness - this is good general practice
+  randomSeed(analogRead(0));
+
   if(!sd.begin(SD_SEL, SPI_HALF_SPEED)) sd.initErrorHalt();
 
   if(!MPR121.begin(MPR121_ADDR)) Serial.println("error setting up MPR121");
