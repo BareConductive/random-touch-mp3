@@ -77,7 +77,7 @@
 // mp3 includes
 #include <SPI.h>
 #include <SdFat.h>
-#include <SdFatUtil.h> 
+#include <FreeStack.h> 
 #include <SFEMP3Shield.h>
 
 // mp3 variables
@@ -182,7 +182,7 @@ void readTouchInputs(){
 void playRandomTrack(int electrode){
 
 	// build our directory name from the electrode
-	char thisFilename[14]; // allow for 8 + 1 + 3 + 1 (8.3 with terminating null char)
+	char thisFilename[255]; // 255 is the longest possible file name size
 	// start with "E00" as a placeholder
 	char thisDirname[] = "E00";
 
@@ -203,22 +203,22 @@ void playRandomTrack(int electrode){
 		Serial.println("error selecting directory"); // error message if reqd.
 	}
 
-	size_t filenameLen;
-	char* matchPtr;
+  size_t filenameLen;
+  char* matchPtr1;
+  char* matchPtr2;
 	unsigned int numMP3files = 0;
 
 	// we're going to look for and count
-	// the MP3 files in our target directory
+	// the MP3 files in our target directory 
   while (file.openNext(sd.vwd(), O_READ)) {
-    file.getFilename(thisFilename);
+    file.getName(thisFilename, sizeof(thisFilename));
     file.close();
 
-    // sorry to do this all without the String object, but it was
-    // causing strange lockup issues
     filenameLen = strlen(thisFilename);
-    matchPtr = strstr(thisFilename, ".MP3");
+    matchPtr1 = strstr(thisFilename, ".mp3");
+    matchPtr2 = strstr(thisFilename, "._");
     // basically, if the filename ends in .MP3, we increment our MP3 count
-    if(matchPtr-thisFilename==filenameLen-4) numMP3files++;
+    if(matchPtr1-thisFilename==filenameLen-4 && matchPtr2-thisFilename!=0) numMP3files++;
   }
 
   // generate a random number, representing the file we will play
@@ -231,16 +231,17 @@ void playRandomTrack(int electrode){
  	sd.chdir(); // set working directory back to root (to reset the file crawler below)
 	if(!sd.chdir(thisDirname)){ // select our directory (again)
 		Serial.println("error selecting directory"); // error message if reqd.
-	} 
+	}
 
   while (file.openNext(sd.vwd(), O_READ)) {
-    file.getFilename(thisFilename);
+    file.getName(thisFilename, sizeof(thisFilename));
     file.close();
 
     filenameLen = strlen(thisFilename);
-    matchPtr = strstr(thisFilename, ".MP3");
+    matchPtr1 = strstr(thisFilename, ".mp3");
+    matchPtr2 = strstr(thisFilename, "._");
     // this time, if we find an MP3 file...
-    if(matchPtr-thisFilename==filenameLen-4){
+    if (matchPtr1-thisFilename==filenameLen-4 && matchPtr2-thisFilename!=0) {
     	// ...we check if it's the one we want, and if so play it...
     	if(fileCtr==chosenFile){
     		// this only works because we're in the correct directory
